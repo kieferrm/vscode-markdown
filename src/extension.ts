@@ -34,6 +34,14 @@ export function activate(context: vscode.ExtensionContext) {
           provider.update(markdownPreviewUri);
        }
     });
+    
+    vscode.workspace.onDidChangeConfiguration(() => {
+        vscode.workspace.textDocuments.forEach((document) => {
+            if ("markdown" === document.uri.scheme) {
+                provider.update(document.uri);
+            } 
+        });
+    });
 }
 
 function isMarkdownFile(fileName: string) {
@@ -73,6 +81,21 @@ function getViewColumn(sideBySide): ViewColumn {
     return active.viewColumn;
 }
 
+function fixHref(resource: Uri, href: string) {
+    if (href) {
+
+        // Return early if href is already a URL
+        if (Uri.parse(href).scheme) {
+            return href;
+        }
+
+        // Otherwise convert to a file URI by joining the href with the resource location
+        return Uri.file(path.join(path.dirname(resource.fsPath), href)).toString();
+    }
+
+    return href;
+}
+
 class MDDocumentContentProvider implements TextDocumentContentProvider {
     private _onDidChange = new EventEmitter<Uri>();
 
@@ -87,8 +110,16 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
 
                 const baseCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`;
                 const codeCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`;
+                
+                let customMDStyles = '';
+                const mdStyles = vscode.workspace.getConfiguration("markdown")['styles'];
+                if (mdStyles && Array.isArray(mdStyles)) {
+                    customMDStyles = mdStyles.map((style) => {
+						return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
+					}).join('\n')
+                }
 
-                approve(baseCss + codeCss + res);
+                approve(baseCss + codeCss + customMDStyles + res);
             });
         });
     }
