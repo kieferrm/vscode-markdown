@@ -3,8 +3,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { TextDocumentContentProvider, EventEmitter, Event, Uri, TextDocumentChangeEvent, TextDocument, ViewColumn } from "vscode";
 
 const hljs = require('highlight.js');
+
 const md = require('markdown-it')({
     highlight: function (str, lang) {
         if (lang && hljs.getLanguage(lang)) {
@@ -18,29 +20,27 @@ const md = require('markdown-it')({
 });
 
 export function activate(context: vscode.ExtensionContext) {
-    let registration = vscode.workspace.registerTextDocumentContentProvider('markdown', {
-        provideTextDocumentContent(uri) {
-            return new Promise((approve, reject) => {
-                fs.readFile(uri.fsPath, (error, buffer) => {
-                    if (error) {
-                        return reject(error);
-                    }
-                    
-                    const res = md.render(buffer.toString());
-
-                    const baseCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`;
-                    const codeCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`;
-
-                    approve(baseCss + codeCss + res);
-                });
-            });
-        }
-    });
+    let provider = new MDDocumentContentProvider();
+    let registration = vscode.workspace.registerTextDocumentContentProvider('markdown', provider);
 
     let d1 = vscode.commands.registerCommand('extension.previewMarkdown', () => openPreview());
     let d2 = vscode.commands.registerCommand('extension.previewMarkdownSide', () => openPreview(true));
 
     context.subscriptions.push(d1, d2, registration);
+
+    vscode.workspace.onDidSaveTextDocument((e: TextDocument) => {
+        if (isMarkdownFile(e.fileName)) {
+          let markdownPreviewUri = Uri.parse(`markdown://${e.uri.path}`);
+          provider.update(markdownPreviewUri);
+       }
+    });
+}
+
+function isMarkdownFile(fileName: string) {
+    return fileName && (fileName.endsWith('.md') 
+          || fileName.endsWith('.mdown')
+          || fileName.endsWith('.markdown')
+          || fileName.endsWith('.markdn'));
 }
 
 function openPreview(sideBySide?: boolean): void {
@@ -49,15 +49,14 @@ function openPreview(sideBySide?: boolean): void {
         return;
     }
 
-    let markdownPreviewUri = vscode.Uri.parse(`markdown://${activeEditor.document.uri.path}`);
-
+    let markdownPreviewUri = Uri.parse(`markdown://${activeEditor.document.uri.path}`);
     vscode.commands.executeCommand('vscode.previewHtml', markdownPreviewUri, getViewColumn(sideBySide));
 }
 
-function getViewColumn(sideBySide): vscode.ViewColumn {
+function getViewColumn(sideBySide): ViewColumn {
     const active = vscode.window.activeTextEditor;
     if (!active) {
-        return vscode.ViewColumn.One;
+        return ViewColumn.One;
     }
 
     if (!sideBySide) {
@@ -65,11 +64,40 @@ function getViewColumn(sideBySide): vscode.ViewColumn {
     }
 
     switch (active.viewColumn) {
-        case vscode.ViewColumn.One:
-            return vscode.ViewColumn.Two;
-        case vscode.ViewColumn.Two:
-            return vscode.ViewColumn.Three;
+        case ViewColumn.One:
+            return ViewColumn.Two;
+        case ViewColumn.Two:
+            return ViewColumn.Three;
     }
 
     return active.viewColumn;
+}
+
+class MDDocumentContentProvider implements TextDocumentContentProvider {
+    private _onDidChange = new EventEmitter<Uri>();
+
+    public provideTextDocumentContent(uri: Uri): Thenable<string> {
+        return new Promise((approve, reject) => {
+            fs.readFile(uri.fsPath, (error, buffer) => {
+                if (error) {
+                    return reject(error);
+                }
+                
+                const res = md.render(buffer.toString());
+
+                const baseCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`;
+                const codeCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`;
+
+                approve(baseCss + codeCss + res);
+            });
+        });
+    }
+
+    get onDidChange(): Event<Uri> {
+        return this._onDidChange.event; 
+    }
+
+    public update(uri: Uri) {
+        this._onDidChange.fire(uri);
+    }
 }
