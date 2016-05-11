@@ -11,11 +11,11 @@ const md = require('markdown-it')({
     highlight: function (str, lang) {
         if (lang && hljs.getLanguage(lang)) {
             try {
-                return `<pre class="hljs"><code>${hljs.highlight(lang, str, true).value}</code></pre>`;
+                return `<pre class="hljs"><code><div>${hljs.highlight(lang, str, true).value}</div></code></pre>`;
             } catch (error) { }
         }
 
-        return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`;
+        return `<pre class="hljs"><code><div>${md.utils.escapeHtml(str)}</div></code></pre>`;
     }
 });
 
@@ -96,30 +96,129 @@ function fixHref(resource: Uri, href: string) {
     return href;
 }
 
+enum Theme {
+	LIGHT,
+	DARK,
+	HC_BLACK
+}
+
+const LIGHT_SCROLLBAR_CSS: string = [
+		'<style type="text/css">',
+		'	::-webkit-scrollbar {',
+		'		width: 14px;',
+		'		height: 14px;',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb {',
+		'		background-color: rgba(100, 100, 100, 0.4);',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb:hover {',
+		'		background-color: rgba(100, 100, 100, 0.7);',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb:active {',
+		'		background-color: rgba(0, 0, 0, 0.6);',
+		'	}',
+		'</style>'
+	].join('\n');
+
+const DARK_SCROLLBAR_CSS: string = [
+		'<style type="text/css">',
+		'	::-webkit-scrollbar {',
+		'		width: 14px;',
+		'		height: 14px;',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb {',
+		'		background-color: rgba(121, 121, 121, 0.4);',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb:hover {',
+		'		background-color: rgba(100, 100, 100, 0.7);',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb:active {',
+		'		background-color: rgba(85, 85, 85, 0.8);',
+		'	}',
+		'</style>'
+	].join('\n');
+
+const HC_BLACK_SCROLLBAR_CSS: string = [
+		'<style type="text/css">',
+		'	::-webkit-scrollbar {',
+		'		width: 14px;',
+		'		height: 14px;',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb {',
+		'		background-color: rgba(111, 195, 223, 0.3);',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb:hover {',
+		'		background-color: rgba(111, 195, 223, 0.4);',
+		'	}',
+		'',
+		'	::-webkit-scrollbar-thumb:active {',
+		'		background-color: rgba(111, 195, 223, 0.4);',
+		'	}',
+		'</style>'
+	].join('\n');
+
 class MDDocumentContentProvider implements TextDocumentContentProvider {
     private _onDidChange = new EventEmitter<Uri>();
 
     public provideTextDocumentContent(uri: Uri): Thenable<string> {
-        return new Promise((approve, reject) => {
-            fs.readFile(uri.fsPath, (error, buffer) => {
-                if (error) {
-                    return reject(error);
-                }
-                
-                const res = md.render(buffer.toString());
+        return vscode.commands.executeCommand('vscode.getBaseTheme').then((currentTheme: String) => {
+            return new Promise((approve, reject) => {
+                fs.readFile(uri.fsPath, (error, buffer) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    
+                    const res = md.render(buffer.toString());
+                    const mdStyles = vscode.workspace.getConfiguration("markdown")['styles'];
+                    const theme = (currentTheme === 'vs-dark') ? Theme.DARK : (currentTheme === 'vs') ? Theme.LIGHT : Theme.HC_BLACK;
 
-                const baseCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`;
-                const codeCss = `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`;
-                
-                let customMDStyles = '';
-                const mdStyles = vscode.workspace.getConfiguration("markdown")['styles'];
-                if (mdStyles && Array.isArray(mdStyles)) {
-                    customMDStyles = mdStyles.map((style) => {
-						return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
-					}).join('\n')
-                }
+                    // Compute head
+				    let head = [
+					  '<!DOCTYPE html>',
+					  '<html>',
+					  '<head>',
+					  '<meta http-equiv="Content-type" content="text/html;charset=UTF-8">',
+                      `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`,
+                      `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`,
+                      (theme === Theme.LIGHT) ? LIGHT_SCROLLBAR_CSS : (theme === Theme.DARK) ? DARK_SCROLLBAR_CSS : HC_BLACK_SCROLLBAR_CSS,
+                      mdStyles && Array.isArray(mdStyles) ? mdStyles.map((style) => {
+                        return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
+                      }).join('\n') : '',
+                      '</head>',
+                      '<body>'
+                    ].join('\n');
+                                        
+                    // Compute body
+                    let body = [
+                        (theme === Theme.LIGHT) ? '<div class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div class="monaco-editor vs-dark">' : '<div class="monaco-editor hc-black">',
+                        res,
+                        '</div>',
+                        `<script>
+                            var electron = require("electron"); 
+                            var remote = electron.remote;
+                            var ipc = electron.ipcRenderer;
+                            var windowId = remote.getCurrentWindow().id;
+                            ipc.send('vscode:openDevTools', windowId);
+                         </script>`
+                    ].join('\n');
 
-                approve(baseCss + codeCss + customMDStyles + res);
+                    // Tail
+                    let tail = [
+                        '</body>',
+                        '</html>'
+                    ].join('\n');
+
+                    approve(head + body + tail);
+                });
+                
             });
         });
     }
