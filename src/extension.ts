@@ -135,7 +135,7 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
                                         
                     // Compute body
                     let body = [
-                        (theme === Theme.LIGHT) ? '<div class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div class="monaco-editor vs-dark">' : '<div class="monaco-editor hc-black">',
+                        (theme === Theme.LIGHT) ? '<div id="container" class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div id="container" class="monaco-editor vs-dark">' : '<div id="container" class="monaco-editor hc-black">',
                         res,
                         '</div>'
                     ].join('\n');
