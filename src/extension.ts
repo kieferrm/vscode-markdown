@@ -8,6 +8,7 @@ import { TextDocumentContentProvider, EventEmitter, Event, Uri, TextDocumentChan
 const hljs = require('highlight.js');
 
 const md = require('markdown-it')({
+    html: true,
     highlight: function (str, lang) {
         if (lang && hljs.getLanguage(lang)) {
             try {
