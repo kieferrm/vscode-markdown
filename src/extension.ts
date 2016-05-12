@@ -103,69 +103,6 @@ enum Theme {
 	HC_BLACK
 }
 
-const LIGHT_SCROLLBAR_CSS: string = [
-		'<style type="text/css">',
-		'	::-webkit-scrollbar {',
-		'		width: 14px;',
-		'		height: 14px;',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb {',
-		'		background-color: rgba(100, 100, 100, 0.4);',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb:hover {',
-		'		background-color: rgba(100, 100, 100, 0.7);',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb:active {',
-		'		background-color: rgba(0, 0, 0, 0.6);',
-		'	}',
-		'</style>'
-	].join('\n');
-
-const DARK_SCROLLBAR_CSS: string = [
-		'<style type="text/css">',
-		'	::-webkit-scrollbar {',
-		'		width: 14px;',
-		'		height: 14px;',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb {',
-		'		background-color: rgba(121, 121, 121, 0.4);',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb:hover {',
-		'		background-color: rgba(100, 100, 100, 0.7);',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb:active {',
-		'		background-color: rgba(85, 85, 85, 0.8);',
-		'	}',
-		'</style>'
-	].join('\n');
-
-const HC_BLACK_SCROLLBAR_CSS: string = [
-		'<style type="text/css">',
-		'	::-webkit-scrollbar {',
-		'		width: 14px;',
-		'		height: 14px;',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb {',
-		'		background-color: rgba(111, 195, 223, 0.3);',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb:hover {',
-		'		background-color: rgba(111, 195, 223, 0.4);',
-		'	}',
-		'',
-		'	::-webkit-scrollbar-thumb:active {',
-		'		background-color: rgba(111, 195, 223, 0.4);',
-		'	}',
-		'</style>'
-	].join('\n');
-
 class MDDocumentContentProvider implements TextDocumentContentProvider {
     private _onDidChange = new EventEmitter<Uri>();
 
@@ -189,7 +126,6 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
 					  '<meta http-equiv="Content-type" content="text/html;charset=UTF-8">',
                       `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`,
                       `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`,
-                      (theme === Theme.LIGHT) ? LIGHT_SCROLLBAR_CSS : (theme === Theme.DARK) ? DARK_SCROLLBAR_CSS : HC_BLACK_SCROLLBAR_CSS,
                       mdStyles && Array.isArray(mdStyles) ? mdStyles.map((style) => {
                         return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
                       }).join('\n') : '',
@@ -201,14 +137,7 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
                     let body = [
                         (theme === Theme.LIGHT) ? '<div class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div class="monaco-editor vs-dark">' : '<div class="monaco-editor hc-black">',
                         res,
-                        '</div>',
-                        `<script>
-                            var electron = require("electron"); 
-                            var remote = electron.remote;
-                            var ipc = electron.ipcRenderer;
-                            var windowId = remote.getCurrentWindow().id;
-                            ipc.send('vscode:openDevTools', windowId);
-                         </script>`
+                        '</div>'
                     ].join('\n');
 
                     // Tail
