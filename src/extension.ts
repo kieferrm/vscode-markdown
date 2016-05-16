@@ -116,7 +116,7 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
                     
                     const res = md.render(buffer.toString());
                     const mdStyles = vscode.workspace.getConfiguration("markdown")['styles'];
-                    const theme = (currentTheme === 'vs-dark') ? Theme.DARK : (currentTheme === 'vs') ? Theme.LIGHT : Theme.HC_BLACK;
+                    // const theme = (currentTheme === 'vs-dark') ? Theme.DARK : (currentTheme === 'vs') ? Theme.LIGHT : Theme.HC_BLACK;
 
                     // Compute head
 				    let head = [
@@ -133,12 +133,13 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
                       '<body>'
                     ].join('\n');
                                         
-                    // Compute body
-                    let body = [
-                        (theme === Theme.LIGHT) ? '<div id="container" class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div id="container" class="monaco-editor vs-dark">' : '<div id="container" class="monaco-editor hc-black">',
-                        res,
-                        '</div>'
-                    ].join('\n');
+                    // // Compute body
+                    let body = res;
+                    // let body = [
+                    //     (theme === Theme.LIGHT) ? '<div id="container" class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div id="container" class="monaco-editor vs-dark">' : '<div id="container" class="monaco-editor hc-black">',
+                    //     res,
+                    //     '</div>'
+                    // ].join('\n');
 
                     // Tail
                     let tail = [
