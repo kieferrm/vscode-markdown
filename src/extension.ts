@@ -130,7 +130,7 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
                         return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
                       }).join('\n') : '',
                       '</head>',
-                      '<body>'
+                      '<body class="vs-theme-aware">'
                     ].join('\n');
                                         
                     // // Compute body
