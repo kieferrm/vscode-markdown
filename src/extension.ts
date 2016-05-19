@@ -6,7 +6,7 @@ import * as path from 'path';
 import { TextDocumentContentProvider, EventEmitter, Event, Uri, TextDocumentChangeEvent, TextDocument, ViewColumn } from "vscode";
 
 const hljs = require('highlight.js');
-
+const mdnh = require('markdown-it-named-headers');
 const md = require('markdown-it')({
     html: true,
     highlight: function (str, lang) {
@@ -18,7 +18,7 @@ const md = require('markdown-it')({
 
         return `<pre class="hljs"><code><div>${md.utils.escapeHtml(str)}</div></code></pre>`;
     }
-});
+}).use(mdnh, {});
 
 export function activate(context: vscode.ExtensionContext) {
     let provider = new MDDocumentContentProvider();
