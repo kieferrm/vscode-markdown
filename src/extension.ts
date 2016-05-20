@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { TextDocumentContentProvider, EventEmitter, Event, Uri, TextDocumentChangeEvent, TextDocument, ViewColumn } from "vscode";
+import { TextDocumentContentProvider, EventEmitter, Event, Uri, TextDocument, ViewColumn } from "vscode";
 
 const hljs = require('highlight.js');
 const mdnh = require('markdown-it-named-headers');
@@ -15,7 +15,6 @@ const md = require('markdown-it')({
                 return `<pre class="hljs"><code><div>${hljs.highlight(lang, str, true).value}</div></code></pre>`;
             } catch (error) { }
         }
-
         return `<pre class="hljs"><code><div>${md.utils.escapeHtml(str)}</div></code></pre>`;
     }
 }).use(mdnh, {});
@@ -97,59 +96,47 @@ function fixHref(resource: Uri, href: string) {
     return href;
 }
 
-enum Theme {
-	LIGHT,
-	DARK,
-	HC_BLACK
-}
-
 class MDDocumentContentProvider implements TextDocumentContentProvider {
     private _onDidChange = new EventEmitter<Uri>();
 
     public provideTextDocumentContent(uri: Uri): Thenable<string> {
-        return vscode.commands.executeCommand('vscode.getBaseTheme').then((currentTheme: String) => {
-            return new Promise((approve, reject) => {
-                fs.readFile(uri.fsPath, (error, buffer) => {
-                    if (error) {
-                        return reject(error);
-                    }
-                    
-                    const res = md.render(buffer.toString());
-                    const mdStyles = vscode.workspace.getConfiguration("markdown")['styles'];
-                    // const theme = (currentTheme === 'vs-dark') ? Theme.DARK : (currentTheme === 'vs') ? Theme.LIGHT : Theme.HC_BLACK;
 
-                    // Compute head
-				    let head = [
-					  '<!DOCTYPE html>',
-					  '<html>',
-					  '<head>',
-					  '<meta http-equiv="Content-type" content="text/html;charset=UTF-8">',
-                      `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`,
-                      `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`,
-                      mdStyles && Array.isArray(mdStyles) ? mdStyles.map((style) => {
-                        return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
-                      }).join('\n') : '',
-                      '</head>',
-                      '<body class="vs-theme-aware">'
-                    ].join('\n');
-                                        
-                    // // Compute body
-                    let body = res;
-                    // let body = [
-                    //     (theme === Theme.LIGHT) ? '<div id="container" class="monaco-editor vs">' : (theme === Theme.DARK) ? '<div id="container" class="monaco-editor vs-dark">' : '<div id="container" class="monaco-editor hc-black">',
-                    //     res,
-                    //     '</div>'
-                    // ].join('\n');
-
-                    // Tail
-                    let tail = [
-                        '</body>',
-                        '</html>'
-                    ].join('\n');
-
-                    approve(head + body + tail);
+        function computeCustomStyleSheetIncludes() : string[] {
+            const styles = vscode.workspace.getConfiguration("markdown")['styles'];
+            if (styles && Array.isArray(styles)) {
+                return styles.map((style) => {
+                    return `<link rel="stylesheet" href="${fixHref(uri, style)}" type="text/css" media="screen">`;
                 });
+            }
+            return [];
+        }
+
+        return new Promise((approve, reject) => {
+            fs.readFile(uri.fsPath, (error, buffer) => {
+                if (error) {
+                    return reject(error);
+                }
                 
+                const head = [].concat(
+                    '<!DOCTYPE html>',
+                    '<html>',
+                    '<head>',
+                    '<meta http-equiv="Content-type" content="text/html;charset=UTF-8">',
+                    `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'markdown.css')}" >`,
+                    `<link rel="stylesheet" type="text/css" href="${path.join(__dirname, '..', '..', 'media', 'tomorrow.css')}" >`,
+                    computeCustomStyleSheetIncludes(),
+                    '</head>',
+                    '<body class="vs-theme-aware">'
+                ).join('\n');
+                                    
+                const body = md.render(buffer.toString());
+
+                const tail = [
+                    '</body>',
+                    '</html>'
+                ].join('\n');
+
+                approve(head + body + tail);
             });
         });
     }
