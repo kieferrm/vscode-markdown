@@ -54,6 +54,7 @@ function isMarkdownFile(fileName: string) {
 function openPreview(sideBySide?: boolean): void {
     const activeEditor = vscode.window.activeTextEditor;
     if (!activeEditor) {
+        vscode.commands.executeCommand('workbench.action.navigateBack');
         return;
     }
 
