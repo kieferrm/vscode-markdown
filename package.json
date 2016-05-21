@@ -42,17 +42,25 @@
         "commands": [
             {
                 "command": "extension.previewMarkdown",
-                "title": "Open Markdown Preview"
+                "title": "Markdown: Toggle Preview"
             },
             {
                 "command": "extension.previewMarkdownSide",
-                "title": "Open Markdown Preview to the Side"
+                "title": "Markdown: Open Preview to the Side"
             }
         ],
-        "keybindings": {
-            "command": "extension.previewMarkdown",
-            "key": "F2"
-        }
+        "keybindings": [
+            {
+                "command": "extension.previewMarkdown",
+                "key": "shift+ctrl+v",
+                "mac": "shift+cmd+v"
+            },
+            {
+                "command": "extension.previewMarkdownSide",
+                "key": "ctrl+k v",
+                "mac": "cmd+k v"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
