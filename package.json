@@ -42,11 +42,11 @@
         "commands": [
             {
                 "command": "extension.previewMarkdown",
-                "title": "Markdown: Toggle Preview"
+                "title": "%markdown.previewMarkdown.title%"
             },
             {
                 "command": "extension.previewMarkdownSide",
-                "title": "Markdown: Open Preview to the Side"
+                "title": "%markdown.previewMarkdownSide.title%"
             }
         ],
         "keybindings": [
