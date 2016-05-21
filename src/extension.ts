@@ -1,4 +1,9 @@
-'use strict';
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+ 'use strict';
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
@@ -37,13 +42,14 @@ export function activate(context: ExtensionContext) {
 
     vscode.workspace.onDidChangeConfiguration(() => {
         vscode.workspace.textDocuments.forEach((document) => {
-            if ("markdown" === document.uri.scheme) {
+            if ('markdown' === document.uri.scheme) {
                 provider.update(document.uri);
             }
         });
     });
 }
 
+// copy from src/vs/base/common/strings.ts
 function endsWith(haystack: string, needle: string): boolean {
 	let diff = haystack.length - needle.length;
 	if (diff > 0) {
@@ -119,7 +125,7 @@ class MDDocumentContentProvider implements TextDocumentContentProvider {
     }
 
     private computeCustomStyleSheetIncludes(uri) : string[] {
-        const styles = vscode.workspace.getConfiguration("markdown")['styles'];
+        const styles = vscode.workspace.getConfiguration('markdown')['styles'];
         if (styles && Array.isArray(styles)) {
             return styles.map((style) => {
                 return `<link rel="stylesheet" href="${this.fixHref(uri, style)}" type="text/css" media="screen">`;
