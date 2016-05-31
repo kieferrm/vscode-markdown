@@ -1,4 +1,4 @@
-This repo is no longer active. All code as been moved to https://github.com/Microsoft/vscode/tree/kieferrm/markdown and will be merged into master from there.
+This repo is **no longer active**. All code as been moved to https://github.com/Microsoft/vscode/tree/kieferrm/markdown and will be merged into master from there.
 
 
 # Refactoring VSCode Markdown Editor
